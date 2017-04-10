@@ -2,6 +2,39 @@
 
 **scopelint** checks for unpinned variables in go programs.
 
+## What's this?
+
+```go
+values := []string{"a", "b", "c"}
+for val := range values {
+  go func() {
+    fmt.Println(val)
+  }()
+}
+/*output:
+c
+c
+c
+(unstable)*/
+```
+
+```golang
+var copies []*string
+for val := range values {
+  copies = append(copies, &val)
+}
+/*(in copies)
+&"c"
+&"c"
+&"c"
+*/
+```
+
+In Go, the val variable in the above loops is actually a single variable.
+So in many case (like the above), using it makes for us annoying bugs.
+
+The `scopelint` finds unpinned variables in such case.
+
 ## Install
 
 go get -u github.com/kyoh86/scopelint
