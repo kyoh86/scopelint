@@ -6,10 +6,14 @@
 
 ```go
 values := []string{"a", "b", "c"}
-for val := range values {
-  go func() {
-    fmt.Println(val)
-  }()
+var funcs []func()
+for _, val := range values {
+	funcs = append(funcs, func() {
+		fmt.Println(val)
+	})
+}
+for _, f := range funcs {
+	f()
 }
 /*output:
 c
@@ -20,8 +24,8 @@ c
 
 ```golang
 var copies []*string
-for val := range values {
-  copies = append(copies, &val)
+for _, val := range values {
+	copies = append(copies, &val)
 }
 /*(in copies)
 &"c"
@@ -30,10 +34,38 @@ for val := range values {
 */
 ```
 
-In Go, the val variable in the above loops is actually a single variable.
+In Go, the `val` variable in the above loops is actually a single variable.
 So in many case (like the above), using it makes for us annoying bugs.
 
-The `scopelint` finds unpinned variables in such case.
+You can find them with `scopelint`, and fix it.
+
+```
+$ scopelint ./example/readme.go
+example/readme.go:10:16: Using the variable on range scope "val" in function literal
+example/readme.go:23:28: Using a reference for the variable on range scope "val"
+Found 2 lint problems; failing.
+```
+
+(Fixed sample):
+
+```go
+values := []string{"a", "b", "c"}
+var funcs []func()
+for _, val := range values {
+  val := val // pin!
+	funcs = append(funcs, func() {
+		fmt.Println(val)
+	})
+}
+for _, f := range funcs {
+	f()
+}
+var copies []*string
+for _, val := range values {
+  val := val // pin!
+	copies = append(copies, &val)
+}
+```
 
 ## Install
 
