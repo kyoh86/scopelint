@@ -19,7 +19,7 @@ for _, f := range funcs {
 c
 c
 c
-(unstable)*/
+*/
 ```
 
 ```golang
@@ -87,9 +87,16 @@ scopelint ./...
 
 And also, scopelint supports the following options:
 
-The `--set-exit-status` flag makes it to set exit status to 1 if any problem variables are found (if you DO NOT it, set --no-set-exit-status)
-The `--vendor` flag enables checking in the `vendor` directories (if you DO NOT it, set `--no-vendor` flag)
-The `--test` flag enables checking in the `*_test.go` files" (if you DO NOT it, set `--no-test` flag)
+* The `--set-exit-status` flag makes it to set exit status to 1 if any problem variables are found (if you DO NOT it, set --no-set-exit-status)
+* The `--vendor` flag enables checking in the `vendor` directories (if you DO NOT it, set `--no-vendor` flag)
+* The `--test` flag enables checking in the `*_test.go` files" (if you DO NOT it, set `--no-test` flag)
+
+
+### Use with gometalinter
+
+scopelint can be used with [gometalinter](https://github.com/alecthomas/gometalinter) in `--linter` flag.
+
+`gometalinter --disable-all --linter 'scope:scopelint {path}:^(?P<path>.*?\.go):(?P<line>\d+):(?P<col>\d+):\s*(?P<message>.*)$'`
 
 ## Exit Codes
 
