@@ -28,9 +28,11 @@ var params struct {
 
 var problems int
 
+var version = "snapshot"
+
 func main() {
 	app := kingpin.New("scopelint", "Checks for unpinned variables in go programs")
-	app.Author("kyoh86").Version("0.1.0")
+	app.Author("kyoh86").Version(version)
 	app.VersionFlag.Short('v')
 
 	app.Flag("set-exit-status", "Set exit status to 1 if any problem variables are found").Default("true").BoolVar(&params.setExitStatus)
