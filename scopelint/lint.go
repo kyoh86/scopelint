@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"go/types"
 	"sort"
+	"strings"
 )
 
 // A Linter lints Go source code.
@@ -38,7 +39,7 @@ func (l *Linter) LintFiles(files map[string][]byte) ([]Problem, error) {
 		}
 		if pkgName == "" {
 			pkgName = astFile.Name.Name
-		} else if astFile.Name.Name != pkgName {
+		} else if strings.TrimSuffix(astFile.Name.Name, "_test") != strings.TrimSuffix(pkgName, "_test") {
 			return nil, fmt.Errorf("%s is in package %s, not %s", filename, astFile.Name.Name, pkgName)
 		}
 		pkg.Files[filename] = &File{
