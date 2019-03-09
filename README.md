@@ -1,5 +1,9 @@
 # scopelint
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/kyoh86/scopelint)](https://goreportcard.com/report/github.com/kyoh86/scopelint)
+[![CircleCI](https://img.shields.io/circleci/project/github/kyoh86/scopelint.svg)](https://circleci.com/gh/kyoh86/scopelint)
+[![Coverage Status](https://img.shields.io/codecov/c/github/kyoh86/scopelint.svg)](https://codecov.io/gh/kyoh86/scopelint)
+
 **scopelint** checks for unpinned variables in go programs.
 
 ## What's this?
