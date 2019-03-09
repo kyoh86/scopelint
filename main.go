@@ -268,7 +268,7 @@ func matchPackages(pattern string) []string {
 
 	// Commands
 	cmd := filepath.Join(goroot, "src/cmd") + string(filepath.Separator)
-	filepath.Walk(cmd, func(path string, fi os.FileInfo, err error) error {
+	if err := filepath.Walk(cmd, func(path string, fi os.FileInfo, err error) error {
 		if err != nil || !fi.IsDir() || path == cmd {
 			return nil
 		}
@@ -299,7 +299,9 @@ func matchPackages(pattern string) []string {
 		}
 		pkgs = append(pkgs, name)
 		return nil
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	for _, src := range buildContext.SrcDirs() {
 		if (pattern == standardPackages || pattern == commandPackages) && src != gorootSrc {
@@ -310,7 +312,7 @@ func matchPackages(pattern string) []string {
 		if pattern == commandPackages {
 			root += commandPackages + string(filepath.Separator)
 		}
-		filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		if err := filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 			if err != nil || !fi.IsDir() || path == src {
 				return nil
 			}
@@ -338,14 +340,14 @@ func matchPackages(pattern string) []string {
 				return nil
 			}
 			_, err = buildContext.ImportDir(path, 0)
-			if err != nil {
-				if _, noGo := err.(*build.NoGoError); noGo {
-					return nil
-				}
+			if _, noGo := err.(*build.NoGoError); noGo {
+				return nil
 			}
 			pkgs = append(pkgs, name)
 			return nil
-		})
+		}); err != nil {
+			panic(err)
+		}
 	}
 	return pkgs
 }
@@ -380,7 +382,7 @@ func matchPackagesInFS(pattern string) []string {
 	match := matchPattern(pattern)
 
 	var pkgs []string
-	filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
+	if err := filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
 		if err != nil || !fi.IsDir() {
 			return nil
 		}
@@ -415,7 +417,9 @@ func matchPackagesInFS(pattern string) []string {
 		}
 		pkgs = append(pkgs, name)
 		return nil
-	})
+	}); err != nil {
+		panic(err)
+	}
 	return pkgs
 }
 
@@ -456,9 +460,7 @@ func (a *arguments) addDirectory(directory ...string) error {
 	if len(a.packages) > 0 || len(a.files) > 0 {
 		return errors.New("cannot search lints in directories with packages or files")
 	}
-	for _, d := range directory {
-		a.directories = append(a.directories, d)
-	}
+	a.directories = append(a.directories, directory...)
 	return nil
 }
 

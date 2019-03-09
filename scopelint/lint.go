@@ -8,7 +8,6 @@ import (
 	"go/token"
 	"go/types"
 	"sort"
-	"strings"
 )
 
 // A Linter lints Go source code.
@@ -82,8 +81,6 @@ type File struct {
 	Source   []byte
 	Filename string
 }
-
-func (f *File) isTest() bool { return strings.HasSuffix(f.Filename, "_test.go") }
 
 func (f *File) lint() {
 	ast.Walk(&Node{
