@@ -86,18 +86,18 @@ type File struct {
 func (f *File) lint() {
 	ast.Walk(&Node{
 		File:          *f,
-		DangerObjects: map[*ast.Object]struct{}{},
-		UnsafeObjects: map[*ast.Object]struct{}{},
-		SkipFuncs:     map[*ast.FuncLit]struct{}{},
+		DangerObjects: map[*ast.Object]int{},
+		UnsafeObjects: map[*ast.Object]int{},
+		SkipFuncs:     map[*ast.FuncLit]int{},
 	}, f.ASTFile)
 }
 
 // Node represents a Node being linted.
 type Node struct {
 	File
-	DangerObjects map[*ast.Object]struct{}
-	UnsafeObjects map[*ast.Object]struct{}
-	SkipFuncs     map[*ast.FuncLit]struct{}
+	DangerObjects map[*ast.Object]int
+	UnsafeObjects map[*ast.Object]int
+	SkipFuncs     map[*ast.FuncLit]int
 }
 
 // Visit method is invoked for each node encountered by Walk.
@@ -111,7 +111,7 @@ func (f *Node) Visit(node ast.Node) ast.Visitor {
 			for _, lh := range init.Lhs {
 				switch tlh := lh.(type) {
 				case *ast.Ident:
-					f.UnsafeObjects[tlh.Obj] = struct{}{}
+					f.UnsafeObjects[tlh.Obj] = 0
 				}
 			}
 		}
@@ -120,11 +120,11 @@ func (f *Node) Visit(node ast.Node) ast.Visitor {
 		// Memory variables declarated in range statement
 		switch k := typedNode.Key.(type) {
 		case *ast.Ident:
-			f.UnsafeObjects[k.Obj] = struct{}{}
+			f.UnsafeObjects[k.Obj] = 0
 		}
 		switch v := typedNode.Value.(type) {
 		case *ast.Ident:
-			f.UnsafeObjects[v.Obj] = struct{}{}
+			f.UnsafeObjects[v.Obj] = 0
 		}
 
 	case *ast.UnaryExpr:
@@ -150,17 +150,18 @@ func (f *Node) Visit(node ast.Node) ast.Visitor {
 		// Ignore func literals that'll be called immediately.
 		switch funcLit := typedNode.Fun.(type) {
 		case *ast.FuncLit:
-			f.SkipFuncs[funcLit] = struct{}{}
+			f.SkipFuncs[funcLit] = 0
 		}
 
 	case *ast.FuncLit:
 		if _, skip := f.SkipFuncs[typedNode]; !skip {
-			dangers := map[*ast.Object]struct{}{}
+			dangers := map[*ast.Object]int{}
 			for d := range f.DangerObjects {
-				dangers[d] = struct{}{}
+				dangers[d] = 0
 			}
 			for u := range f.UnsafeObjects {
-				dangers[u] = struct{}{}
+				dangers[u] = 0
+				f.UnsafeObjects[u]++
 			}
 			return &Node{
 				File:          f.File,
@@ -168,6 +169,21 @@ func (f *Node) Visit(node ast.Node) ast.Visitor {
 				UnsafeObjects: f.UnsafeObjects,
 				SkipFuncs:     f.SkipFuncs,
 			}
+		}
+
+	case *ast.ReturnStmt:
+		unsafe := map[*ast.Object]int{}
+		for u := range f.UnsafeObjects {
+			if f.UnsafeObjects[u] == 0 {
+				continue
+			}
+			unsafe[u] = f.UnsafeObjects[u]
+		}
+		return &Node{
+			File:          f.File,
+			DangerObjects: f.DangerObjects,
+			UnsafeObjects: unsafe,
+			SkipFuncs:     f.SkipFuncs,
 		}
 	}
 	return f
