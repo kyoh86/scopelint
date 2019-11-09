@@ -94,6 +94,40 @@ And also, scopelint supports the following options:
 * The `--vendor` flag enables checking in the `vendor` directories (if you DO NOT it, set `--no-vendor` flag)
 * The `--test` flag enables checking in the `*_test.go` files" (if you DO NOT it, set `--no-test` flag)
 
+### Nolint
+
+To ignore issues from use an option comment like //scopelint:ignore.
+For example, if it's used inline (not from the beginning of the line), it ignores issues only for the line.
+
+```go
+var copies []*string
+for _, val := range values {
+	copies = append(copies, &val) //scopelint:ignore
+}
+```
+
+To ignore issues for the block of code put it on the beginning of a line before the block:
+
+```go
+var copies []*string
+//scopelint:ignore
+for _, val := range values {
+	copies = append(copies, &val)
+}
+```
+
+Also, you can exclude all issues in a file by:
+
+```go
+//scopelint:ignore
+package pkg
+```
+
+You may add a comment explaining or justifying why //scopelint:ignore is being used on the same line as the flag itself:
+
+```go
+//scopelint:ignore // any comment
+```
 
 ### Use with gometalinter
 
@@ -105,6 +139,11 @@ scopelint can be used with [gometalinter](https://github.com/alecthomas/gometali
 
 scopelint returns 1 if any problems were found in the checked files.
 It returns 2 if there were any other failures.
+
+## Known Issues
+
+- False positive for for table tests [#4](https://github.com/kyoh86/scopelint/issues/4)
+    - I won't fix it because scopelint supports ignore them all. [=> nolint](#Nolint)
 
 ## TODO
 
