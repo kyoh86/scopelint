@@ -43,11 +43,12 @@ func (l *Linter) LintFiles(files map[string][]byte) ([]Problem, error) {
 			return nil, fmt.Errorf("%s is in package %s, not %s", filename, astFile.Name.Name, pkgName)
 		}
 		pkg.Files[filename] = &File{
-			Package:  pkg,
-			ASTFile:  astFile,
-			FileSet:  pkg.FileSet,
-			Source:   src,
-			Filename: filename,
+			Package:    pkg,
+			ASTFile:    astFile,
+			FileSet:    pkg.FileSet,
+			Source:     src,
+			Filename:   filename,
+			CommentMap: ast.NewCommentMap(pkg.FileSet, astFile, astFile.Comments),
 		}
 	}
 	return pkg.lint(), nil
@@ -76,11 +77,12 @@ func (p *Package) lint() []Problem {
 
 // File represents a File being linted.
 type File struct {
-	Package  *Package
-	ASTFile  *ast.File
-	FileSet  *token.FileSet
-	Source   []byte
-	Filename string
+	Package    *Package
+	ASTFile    *ast.File
+	FileSet    *token.FileSet
+	Source     []byte
+	Filename   string
+	CommentMap ast.CommentMap
 }
 
 func (f *File) lint() {
