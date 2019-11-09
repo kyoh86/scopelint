@@ -75,6 +75,9 @@ func lintFiles(filenames ...string) {
 		return
 	}
 	for _, p := range ps {
+		if p.Ignored {
+			continue
+		}
 		fmt.Printf("%v: %s\n", p.Position, p.Text)
 		problems++
 	}
