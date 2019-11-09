@@ -14,6 +14,8 @@ type Problem struct {
 	// If the problem has a suggested fix (the minority case),
 	// ReplacementLine is a full replacement for the relevant line of the source file.
 	ReplacementLine string
+
+	Ignored bool // marks ignored issue by nolint directive
 }
 
 func (p *Problem) String() string {
