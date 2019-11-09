@@ -8,34 +8,33 @@
 
 ## What's this?
 
-```go
-values := []string{"a", "b", "c"}
-var funcs []func()
-for _, val := range values {
-	funcs = append(funcs, func() {
-		fmt.Println(val)
-	})
-}
-for _, f := range funcs {
-	f()
-}
-/*output:
-c
-c
-c
-*/
-```
+Sample problem code from: https://github.com/kyoh86/scopelint/blob/master/example/readme.go
 
-```golang
-var copies []*string
-for _, val := range values {
-	copies = append(copies, &val)
-}
-/*(in copies)
-&"c"
-&"c"
-&"c"
-*/
+```
+6  values := []string{"a", "b", "c"}
+7  var funcs []func()
+8  for _, val := range values {
+9  	funcs = append(funcs, func() {
+10 		fmt.Println(val)
+11 	})
+12 }
+13 for _, f := range funcs {
+14 	f()
+15 }
+16 /*output:
+17 c
+18 c
+19 c
+20 */
+21 var copies []*string
+22 for _, val := range values {
+23 	copies = append(copies, &val)
+24 }
+25 /*(in copies)
+26 &"c"
+27 &"c"
+28 &"c"
+29 */
 ```
 
 In Go, the `val` variable in the above loops is actually a single variable.
