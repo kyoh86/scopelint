@@ -100,12 +100,26 @@ type Node struct {
 	DangerObjects map[*ast.Object]int
 	UnsafeObjects map[*ast.Object]int
 	SkipFuncs     map[*ast.FuncLit]int
+	Ignore        bool
 }
 
 // Visit method is invoked for each node encountered by Walk.
 // If the result visitor w is not nil, Walk visits each of the children
 // of node with the visitor w, followed by a call of w.Visit(nil).
 func (n *Node) Visit(node ast.Node) ast.Visitor {
+	next := *n
+	if node == nil {
+		return &next
+	}
+CGS_LOOP:
+	for _, cg := range n.File.CommentMap[node] {
+		for _, com := range cg.List {
+			if hasOptionComment(com.Text, "ignore") {
+				next.Ignore = true
+				break CGS_LOOP
+			}
+		}
+	}
 	switch typedNode := node.(type) {
 	case *ast.ForStmt:
 		switch init := typedNode.Init.(type) {
@@ -135,7 +149,7 @@ func (n *Node) Visit(node ast.Node) ast.Visitor {
 			case *ast.Ident:
 				if _, unsafe := n.UnsafeObjects[ident.Obj]; unsafe {
 					ref := ""
-					n.errorf(ident, 1, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", ident.Name)
+					n.errorf(ident, 1, n.Ignore, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", ident.Name)
 				}
 			}
 		}
@@ -144,7 +158,7 @@ func (n *Node) Visit(node ast.Node) ast.Visitor {
 		if _, obj := n.DangerObjects[typedNode.Obj]; obj {
 			// It is the naked variable in scope of range statement.
 			ref := ""
-			n.errorf(node, 1, link(ref), category("range-scope"), "Using the variable on range scope %q in function literal", typedNode.Name)
+			n.errorf(node, 1, n.Ignore, link(ref), category("range-scope"), "Using the variable on range scope %q in function literal", typedNode.Name)
 			break
 		}
 
@@ -165,12 +179,8 @@ func (n *Node) Visit(node ast.Node) ast.Visitor {
 				dangers[u] = 0
 				n.UnsafeObjects[u]++
 			}
-			return &Node{
-				File:          n.File,
-				DangerObjects: dangers,
-				UnsafeObjects: n.UnsafeObjects,
-				SkipFuncs:     n.SkipFuncs,
-			}
+			next.DangerObjects = dangers
+			return &next
 		}
 
 	case *ast.ReturnStmt:
@@ -181,14 +191,10 @@ func (n *Node) Visit(node ast.Node) ast.Visitor {
 			}
 			unsafe[u] = n.UnsafeObjects[u]
 		}
-		return &Node{
-			File:          n.File,
-			DangerObjects: n.DangerObjects,
-			UnsafeObjects: unsafe,
-			SkipFuncs:     n.SkipFuncs,
-		}
+		next.UnsafeObjects = unsafe
+		return &next
 	}
-	return n
+	return &next
 }
 
 type link string
@@ -197,18 +203,19 @@ type category string
 // The variadic arguments may start with link and category types,
 // and must end with a format string and any arguments.
 // It returns the new Problem.
-func (f *File) errorf(n ast.Node, confidence float64, args ...interface{}) *Problem {
+func (f *File) errorf(n ast.Node, confidence float64, ignore bool, args ...interface{}) *Problem {
 	pos := f.FileSet.Position(n.Pos())
 	if pos.Filename == "" {
 		pos.Filename = f.Filename
 	}
-	return f.Package.errorfAt(pos, confidence, args...)
+	return f.Package.errorfAt(pos, confidence, ignore, args...)
 }
 
-func (p *Package) errorfAt(pos token.Position, confidence float64, args ...interface{}) *Problem {
+func (p *Package) errorfAt(pos token.Position, confidence float64, ignore bool, args ...interface{}) *Problem {
 	problem := Problem{
 		Position:   pos,
 		Confidence: confidence,
+		Ignored:    ignore,
 	}
 	if pos.Filename != "" {
 		// The file might not exist in our mapping if a //line directive was encountered.
