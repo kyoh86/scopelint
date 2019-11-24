@@ -231,3 +231,21 @@ func TestSomething(t *testing.T) {
 		})
 	})
 }
+
+func TestLint_RangeLoop_ReferenceForStructField(t *testing.T) {
+	t.Run("#1: reference for a struct field", func(t *testing.T) {
+		l := new(Linter)
+		problems, err := l.Lint("mypkg/mypkg.go", []byte(`package main
+
+func factory() (out []*int) {
+	for _, v := range make([]struct{ Field int }, 1) {
+		out = append(out, &v.Field)
+	}
+	return out
+}`))
+		require.NoError(t, err)
+		if assert.Len(t, problems, 1) {
+			assert.Equal(t, "Using a reference for the variable on range scope \"v\"", problems[0].Text)
+		}
+	})
+}

@@ -151,6 +151,14 @@ CGS_LOOP:
 					ref := ""
 					n.errorf(ident, 1, n.Ignore, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", ident.Name)
 				}
+			case *ast.SelectorExpr:
+				switch x := ident.X.(type) {
+				case *ast.Ident:
+					if _, unsafe := n.UnsafeObjects[x.Obj]; unsafe {
+						ref := ""
+						n.errorf(ident, 1, n.Ignore, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", x.Name)
+					}
+				}
 			}
 		}
 
