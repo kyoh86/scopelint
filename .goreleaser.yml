@@ -3,18 +3,21 @@ release:
   github:
     owner: kyoh86
     name: scopelint
-brew:
-  install: bin.install "scopelint"
+brews:
+- install: |
+    bin.install "scopelint"
+    man1.install "scopelint.1"
   github:
     owner: kyoh86
     name: homebrew-tap
   folder: Formula
   homepage: https://github.com/kyoh86/scopelint
-  description: Checks for unpinned variables in go programs.
+  description: scopelint checks for unpinned variables in go programs
 builds:
 - goos:
   - linux
   - darwin
+  - windows
   goarch:
   - amd64
   - "386"
@@ -23,10 +26,15 @@ builds:
   main: .
   ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
   binary: scopelint
-archive:
+  hooks:
+    pre: make man
+archives:
+- id: gzip
   format: tar.gz
-  name_template: '{{ .Binary }}_{{.Version}}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{
-    .Arm }}{{ end }}'
+  format_overrides:
+    - goos: windows
+      format: zip
+  name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
   files:
   - licence*
   - LICENCE*
@@ -36,5 +44,6 @@ archive:
   - README*
   - changelog*
   - CHANGELOG*
+  - scopelint.1
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
