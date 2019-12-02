@@ -315,6 +315,7 @@ func matchPackages(pattern string) []string {
 		if pattern == commandPackages {
 			root += commandPackages + string(filepath.Separator)
 		}
+		src := src
 		if err := filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
 			if err != nil || !fi.IsDir() || path == src {
 				return nil

@@ -203,12 +203,12 @@ type category string
 // The variadic arguments may start with link and category types,
 // and must end with a format string and any arguments.
 // It returns the new Problem.
-func (f *File) errorf(n ast.Node, confidence float64, ignore bool, args ...interface{}) *Problem {
+func (f *File) errorf(n ast.Node, confidence float64, ignore bool, args ...interface{}) {
 	pos := f.FileSet.Position(n.Pos())
 	if pos.Filename == "" {
 		pos.Filename = f.Filename
 	}
-	return f.Package.errorfAt(pos, confidence, ignore, args...)
+	f.Package.errorfAt(pos, confidence, ignore, args...)
 }
 
 func (p *Package) errorfAt(pos token.Position, confidence float64, ignore bool, args ...interface{}) *Problem {
