@@ -4,6 +4,7 @@ package scopelint
 import (
 	"fmt"
 	"go/ast"
+	"go/importer"
 	"go/parser"
 	"go/token"
 	"go/types"
@@ -42,6 +43,17 @@ func (l *Linter) LintFiles(files map[string][]byte) ([]Problem, error) {
 		} else if strings.TrimSuffix(astFile.Name.Name, "_test") != strings.TrimSuffix(pkgName, "_test") {
 			return nil, fmt.Errorf("%s is in package %s, not %s", filename, astFile.Name.Name, pkgName)
 		}
+
+		info := &types.Info{
+			Defs: make(map[*ast.Ident]types.Object),
+			Uses: make(map[*ast.Ident]types.Object),
+		}
+		conf := types.Config{Importer: importer.Default()}
+		_, err = conf.Check(pkgName, pkg.FileSet, []*ast.File{astFile}, info)
+		if err != nil {
+			return nil, fmt.Errorf("error on get info from %s file in %s package: %w", filename, pkgName, err)
+		}
+
 		pkg.Files[filename] = &File{
 			Package:    pkg,
 			ASTFile:    astFile,
@@ -49,6 +61,7 @@ func (l *Linter) LintFiles(files map[string][]byte) ([]Problem, error) {
 			Source:     src,
 			Filename:   filename,
 			CommentMap: ast.NewCommentMap(pkg.FileSet, astFile, astFile.Comments),
+			Info:       info,
 		}
 	}
 	return pkg.lint(), nil
@@ -83,6 +96,7 @@ type File struct {
 	Source     []byte
 	Filename   string
 	CommentMap ast.CommentMap
+	Info       *types.Info
 }
 
 func (f *File) lint() {
@@ -143,21 +157,41 @@ CGS_LOOP:
 			n.UnsafeObjects[v.Obj] = 0
 		}
 
+	// &<expr>
 	case *ast.UnaryExpr:
+		// '&' == token.AND
 		if typedNode.Op == token.AND {
 			switch ident := typedNode.X.(type) {
+			// &<var>
 			case *ast.Ident:
 				if _, unsafe := n.UnsafeObjects[ident.Obj]; unsafe {
 					ref := ""
 					n.errorf(ident, 1, n.Ignore, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", ident.Name)
 				}
+			// &<var>.<expr>
 			case *ast.SelectorExpr:
 				switch x := ident.X.(type) {
+				// &<var>.<field>
 				case *ast.Ident:
-					if _, unsafe := n.UnsafeObjects[x.Obj]; unsafe {
-						ref := ""
-						n.errorf(ident, 1, n.Ignore, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", x.Name)
+					if _, unsafe := n.UnsafeObjects[x.Obj]; !unsafe {
+						return &next
 					}
+					if uses, ok := n.Info.Uses[x]; ok {
+						tp := uses.Type().Underlying()
+						switch t := tp.(type) {
+						// $<*var>.<field>
+						case *types.Pointer:
+							tp := t.Elem().Underlying()
+							switch tp.(type) {
+							// safe: &<*struct>.<field>
+							case *types.Struct:
+								return &next
+							}
+						}
+					}
+
+					ref := ""
+					n.errorf(ident, 1, n.Ignore, link(ref), category("range-scope"), "Using a reference for the variable on range scope %q", x.Name)
 				}
 			}
 		}

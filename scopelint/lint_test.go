@@ -248,4 +248,58 @@ func factory() (out []*int) {
 			assert.Equal(t, "Using a reference for the variable on range scope \"v\"", problems[0].Text)
 		}
 	})
+
+	t.Run("#1: reference for a referenced struct field", func(t *testing.T) {
+		l := new(Linter)
+		problems, err := l.Lint("mypkg/mypkg.go", []byte(`package main
+
+func factory() (out []*int) {
+	for _, v := range make([]*struct{ Field int }, 1) {
+		out = append(out, &v.Field)
+	}
+	return out
+}`))
+		require.NoError(t, err)
+		assert.Empty(t, problems)
+	})
+
+	t.Run("#1: reference for a named struct field", func(t *testing.T) {
+		l := new(Linter)
+		problems, err := l.Lint("mypkg/mypkg.go", []byte(`package main
+
+type S struct{
+	Field int
+}
+
+type List []S
+
+func factory() (out []*int) {
+	for _, v := range make(List, 1) {
+		out = append(out, &v.Field)
+	}
+	return out
+}`))
+		require.NoError(t, err)
+		assert.Len(t, problems, 1)
+	})
+
+	t.Run("#1: reference for a referenced named struct field", func(t *testing.T) {
+		l := new(Linter)
+		problems, err := l.Lint("mypkg/mypkg.go", []byte(`package main
+
+type S struct{
+	Field int
+}
+
+type List []*S
+
+func factory() (out []*int) {
+	for _, v := range make(List, 1) {
+		out = append(out, &v.Field)
+	}
+	return out
+}`))
+		require.NoError(t, err)
+		assert.Empty(t, problems)
+	})
 }
