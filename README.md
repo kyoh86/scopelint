@@ -10,7 +10,7 @@
 
 Use [looppointer](https://github.com/kyoh86/looppointer) or [exportloopref](https://github.com/kyoh86/exportloopref) instead.
 
-I you want to find lints as nervous as possible (with some false-positives),
+If you want to find lints as nervous as possible (with some false-positives),
 you should use [looppointer](https://github.com/kyoh86/looppointer).
 
 If you want to find lints as accurately as possible (with some lints ignored),
