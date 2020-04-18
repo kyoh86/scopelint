@@ -6,6 +6,16 @@
 
 **scopelint** checks for unpinned variables in go programs.
 
+## OBSOLETED
+
+Use [looppointer](https://github.com/kyoh86/looppointer) or [exportloopref](https://github.com/kyoh86/exportloopref) instead.
+
+I you want to find lints as nervous as possible (with some false-positives),
+you should use [looppointer](https://github.com/kyoh86/looppointer).
+
+If you want to find lints as accurately as possible (with some lints ignored),
+you should use [exportloopref](https://github.com/kyoh86/exportloopref).
+
 ## What's this?
 
 Sample problem code from: https://github.com/kyoh86/scopelint/blob/master/example/readme.go
