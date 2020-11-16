@@ -136,10 +136,12 @@ CGS_LOOP:
 		// Memory variables declarated in range statement
 		switch k := typedNode.Key.(type) {
 		case *ast.Ident:
+			if typedNode.Key.(*ast.Ident).String() == "_" {break;}
 			n.UnsafeObjects[k.Obj] = 0
 		}
 		switch v := typedNode.Value.(type) {
 		case *ast.Ident:
+			if typedNode.Key.(*ast.Ident).String() == "_" {break;}
 			n.UnsafeObjects[v.Obj] = 0
 		}
 
